@@ -1,117 +1,34 @@
-import { ApolloServer, gql } from 'apollo-server';
+import { ApolloServer } from 'apollo-server-express';
+import express from 'express';
+import typeDefs from './schema.js';
+import resolvers from './resolvers.js';
+import mongodb from 'mongodb';
+const { MongoClient } = mongodb;
+import dotenv from 'dotenv';
+dotenv.config();
 
-const typeDefs = gql`
-  type User {
-    githubLogin: ID!
-    name: String
-    avatar: String
-    postedPhotos: [Photo!]!
-  }
+const app = express();
 
-  enum PhotoCategory {
-    SELFIE
-    PORTRAIT
-    ACTION
-    LANDSCAPE
-    GRAPHIC
-  }
-
-  type Photo {
-    id: ID!
-    url: String!
-    name: String!
-    description: String
-    category: PhotoCategory!
-    postedBy: User!
-  }
-
-  input PostPhotoInput {
-    name: String!
-    category: PhotoCategory = PORTRAIT
-    description: String
-  }
-
-  type Query {
-    totalPhotos: Int!
-    allPhotos: [Photo!]!
-  }
-
-  type Mutation {
-    postPhoto(input: PostPhotoInput!): Photo!
-  }
-`;
-
-let _id = 0;
-
-const users = [
-  {
-    githubLogin: 'mHattrup',
-    name: 'Mike Hattrup',
-  },
-  {
-    githubLogin: 'gPlake',
-    name: 'Glen Plake',
-  },
-  {
-    githubLogin: 'sSchmidt',
-    name: 'Scot Schmidt',
-  },
-];
-
-const photos = [
-  {
-    id: '1',
-    name: 'DTHC',
-    description: 'THCIOOMFC',
-    category: 'ACTION',
-    githubUser: 'gPlake',
-  },
-  {
-    id: '2',
-    name: 'ETS',
-    category: 'SELFIE',
-    githubUser: 'sSchmidt',
-  },
-  {
-    id: '3',
-    name: 'G25',
-    description: '25LOGT',
-    category: 'LANDSCAPE',
-    githubUser: 'sSchmidt',
-  },
-];
-
-const resolvers = {
-  Query: {
-    totalPhotos: () => photos.length,
-    allPhotos: () => photos,
-  },
-  Mutation: {
-    postPhoto(parent, args) {
-      const newPhoto = {
-        id: _id++,
-        ...args.input,
-      };
-      photos.push(newPhoto);
-      return newPhoto;
-    },
-  },
-  Photo: {
-    url: (parent) => `http://yoursite.com/img/${parent.id}.jpg`,
-    postedBy: (parent) => {
-      return users.find((u) => u.githubLogin === parent.githubUser);
-    },
-  },
-  User: {
-    postedPhotos: (parent) => {
-      return photos.filter((p) => p.githubUser === parent.githubLogin);
-    },
-  },
-};
+const MONGO_DB = process.env.DB_HOST;
+const client = await MongoClient.connect(MONGO_DB, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+const db = client.db();
+const context = { db };
 
 const server = new ApolloServer({
   typeDefs,
   resolvers,
+  context,
 });
 
-server.listen().then(({ url }) => console.log(`GraphQL Service running on ${url}`));
+server.applyMiddleware({ app });
+
+app.get('/', (req, res) => res.end('Welcome to PhotoShare API!'));
+
+app.listen({ port: 4000 }, () =>
+  console.log(
+    `GraphQL Service running @ http://localhost:4000${server.graphqlPath}`
+  )
+);
