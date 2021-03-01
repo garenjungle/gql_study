@@ -46,11 +46,14 @@ const typeDefs = gql`
     allPhotos: [Photo!]!
     totalUsers: Int!
     allUsers: [User!]!
+    me: User
   }
 
   type Mutation {
     postPhoto(input: PostPhotoInput!): Photo!
     githubAuth(code: String!): AuthPayload!
+    addFakeUsers(count: Int = 1): [User!]!
+    fakeUserAuth(githubLogin: ID!): AuthPayload!
   }
 `;
 
