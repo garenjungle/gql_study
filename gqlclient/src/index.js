@@ -1,48 +1,39 @@
-import { ApolloClient, InMemoryCache } from '@apollo/client';
 import React from 'react';
-import { render } from 'react-dom';
-import { ApolloProvider } from '@apollo/client';
+import ReactDOM from 'react-dom';
+import App from './App';
 
-import { useQuery, gql } from '@apollo/client';
+import {
+  ApolloProvider,
+  ApolloClient,
+  InMemoryCache,
+  createHttpLink,
+} from '@apollo/client';
 
-const EXCHANGE_RATES = gql`
-  query GetExchangeRates {
-    rates(currency: "USD") {
-      currency
-      rate
-    }
-  }
-`;
+import { setContext } from '@apollo/client/link/context';
 
-function ExchangeRates() {
-  const { loading, error, data } = useQuery(EXCHANGE_RATES);
-
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error :(</p>;
-
-  return data.rates.map(({ currency, rate }) => (
-    <div key={currency}>
-      <p>
-        {currency}: {rate}
-      </p>
-    </div>
-  ));
-}
-
-const client = new ApolloClient({
-  uri: 'https://48p1r2roz4.sse.codesandbox.io',
-  cache: new InMemoryCache()
+const httpLink = createHttpLink({
+  uri: 'http://localhost:4000/graphql',
 });
 
-function App() {
-  return (
-    <ApolloProvider client={client}>
-      <div>
-        <h2>My first Apollo app 🚀</h2>
-        <ExchangeRates></ExchangeRates>
-      </div>
-    </ApolloProvider>
-  );
-}
+const authLink = setContext((_, { headers }) => {
+  return {
+    headers: {
+      ...headers,
+      authorization: localStorage.getItem('token'),
+    },
+  };
+});
 
-render(<App />, document.getElementById('root'));
+const client = new ApolloClient({
+  link: authLink.concat(httpLink),
+  cache: new InMemoryCache(),
+});
+
+ReactDOM.render(
+  <React.StrictMode>
+    <ApolloProvider client={client}>
+      <App />
+    </ApolloProvider>
+  </React.StrictMode>,
+  document.getElementById('root')
+);
