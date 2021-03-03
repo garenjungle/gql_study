@@ -27,11 +27,11 @@ function Users() {
 }
 
 function UserList({ count, users, refetchUsers }) {
-  const updateUserCache = (cache, { data: { addFakeUsers } }) => {
+  const updateUserCache = (cache, { data: { addFakeUsers: afus } }) => {
     const readData = cache.readQuery({ query: ROOT_QUERY });
     const data = { ...readData };
-    data.totalUsers += addFakeUsers.length;
-    data.allUsers = [...data.allUsers, ...addFakeUsers];
+    data.totalUsers += afus.length;
+    data.allUsers = [...data.allUsers, ...afus];
     cache.writeQuery({ query: ROOT_QUERY, data });
   };
 

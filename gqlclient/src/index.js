@@ -10,7 +10,7 @@ import {
 } from '@apollo/client';
 
 import { setContext } from '@apollo/client/link/context';
-import { persistCache } from 'apollo3-cache-persist';
+// import { persistCache } from 'apollo3-cache-persist';
 
 const cache = new InMemoryCache();
 
