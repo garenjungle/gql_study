@@ -10,6 +10,19 @@ import {
 } from '@apollo/client';
 
 import { setContext } from '@apollo/client/link/context';
+import { persistCache } from 'apollo3-cache-persist';
+
+const cache = new InMemoryCache();
+
+// persistCache({
+//   cache,
+//   storage: localStorage,
+// });
+
+// if (localStorage['apollo-cache-persist']) {
+//   let cacheData = JSON.parse(localStorage['apollo-cache-persist']);
+//   cache.restore(cacheData);
+// }
 
 const httpLink = createHttpLink({
   uri: 'http://localhost:4000/graphql',
@@ -24,9 +37,9 @@ const authLink = setContext((_, { headers }) => {
   };
 });
 
-const client = new ApolloClient({
+export const client = new ApolloClient({
   link: authLink.concat(httpLink),
-  cache: new InMemoryCache(),
+  cache,
 });
 
 ReactDOM.render(

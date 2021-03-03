@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@apollo/client": "3.3.11",
+    "apollo3-cache-persist": "0.9.1",
     "cra-template": "1.1.2",
     "graphql": "15.5.0",
     "react": "^17.0.1",

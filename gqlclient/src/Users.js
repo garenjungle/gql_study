@@ -28,7 +28,17 @@ function Users() {
 }
 
 function UserList({ count, users, refetchUsers }) {
-  const [addFakeUsers] = useMutation(ADD_FAKE_USERS_MUTATION);
+  const updateUserCache = (cache, { data: { addFakeUsers } }) => {
+    const readData = cache.readQuery({ query: ROOT_QUERY });
+    const data = { ...readData };
+    data.totalUsers += addFakeUsers.length;
+    data.allUsers = [...data.allUsers, ...addFakeUsers];
+    cache.writeQuery({ query: ROOT_QUERY, data });
+  };
+
+  const [addFakeUsers] = useMutation(ADD_FAKE_USERS_MUTATION, {
+    update: updateUserCache,
+  });
 
   return (
     <div>

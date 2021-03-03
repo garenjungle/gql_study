@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useHistory, withRouter } from 'react-router-dom';
 import { useQuery, useMutation, gql } from '@apollo/client';
 import { ROOT_QUERY } from './App';
+import { client } from './index';
 
 const GITHUB_AUTH_MUTATION = gql`
   mutation githubAuth($code: String!) {
@@ -68,6 +69,9 @@ function AuthorizedUser() {
       requestCode={requestCode}
       logout={() => {
         localStorage.removeItem('token');
+        const readData = client.readQuery({ query: ROOT_QUERY });
+        const data = { ...readData, me: null };
+        client.writeQuery({ query: ROOT_QUERY, data });
       }}
     />
   );
