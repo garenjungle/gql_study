@@ -1,4 +1,3 @@
-import React from 'react';
 import { useQuery, useMutation, gql } from '@apollo/client';
 import { ROOT_QUERY } from './App';
 

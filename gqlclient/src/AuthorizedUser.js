@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useHistory, withRouter } from 'react-router-dom';
 import { useQuery, useMutation, gql } from '@apollo/client';
 import { ROOT_QUERY } from './App';
