@@ -1,8 +1,8 @@
 import { GraphQLScalarType } from 'graphql';
 import authorizeWithGithub from './libs.js';
 import mongodb from 'mongodb';
-import axios from 'axios';
 const { ObjectID } = mongodb;
+import axios from 'axios';
 
 const resolvers = {
   Query: {
@@ -21,9 +21,9 @@ const resolvers = {
   },
 
   Mutation: {
-    postPhoto: async (parent, args, { db, currentUser }) => {
+    postPhoto: async (parent, args, { db, currentUser, pubsub }) => {
       if (!currentUser) {
-        throw new Error('only an authorized uer can post a photo.');
+        throw new Error('only an authorized user can post a photo.');
       }
 
       const newPhoto = {
@@ -35,10 +35,12 @@ const resolvers = {
       const { insertedIds } = await db.collection('photos').insert(newPhoto);
       newPhoto.id = insertedIds[0];
 
+      pubsub.publish('PHOTO_ADDED', { newPhoto });
+
       return newPhoto;
     },
 
-    githubAuth: async (parent, { code }, { db }) => {
+    githubAuth: async (parent, { code }, { db, pubsub }) => {
       let {
         message,
         access_token,
@@ -64,10 +66,13 @@ const resolvers = {
       } = await db
         .collection('users')
         .replaceOne({ githubLogin: login }, latestUserInfo, { upsert: true });
+
+      pubsub.publish('NEW_USER', { newUser: user });
+
       return { user, token: access_token };
     },
 
-    addFakeUsers: async (parent, { count }, { db }) => {
+    addFakeUsers: async (parent, { count }, { db, pubsub }) => {
       const randomUserApi = `https://randomuser.me/api/?results=${count}`;
       const response = await axios(randomUserApi);
       const { results } = response.data;
@@ -78,6 +83,9 @@ const resolvers = {
         githubToken: r.login.sha1,
       }));
       await db.collection('users').insert(users);
+      users.forEach((user) => {
+        pubsub.publish('NEW_USER', { newUser: user });
+      });
       return users;
     },
 
@@ -140,6 +148,17 @@ const resolvers = {
     serialize: (value) => new Date(value).toISOString(),
     parseLiteral: (ast) => ast.value,
   }),
+
+  Subscription: {
+    newPhoto: {
+      subscribe: (parent, args, { pubsub }) =>
+        pubsub.asyncIterator(['PHOTO_ADDED']),
+    },
+    newUser: {
+      subscribe: (parent, args, { pubsub }) =>
+        pubsub.asyncIterator(['NEW_USER']),
+    },
+  },
 };
 
 export default resolvers;

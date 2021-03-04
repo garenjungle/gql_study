@@ -55,6 +55,11 @@ const typeDefs = gql`
     addFakeUsers(count: Int = 1): [User!]!
     fakeUserAuth(githubLogin: ID!): AuthPayload!
   }
+
+  type Subscription {
+    newPhoto: Photo!
+    newUser: User!
+  }
 `;
 
 export default typeDefs;
