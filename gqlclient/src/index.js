@@ -7,9 +7,13 @@ import {
   ApolloClient,
   InMemoryCache,
   createHttpLink,
+  ApolloLink,
+  split,
 } from '@apollo/client';
 
-import { setContext } from '@apollo/client/link/context';
+import { WebSocketLink } from '@apollo/client/link/ws';
+import { getMainDefinition } from '@apollo/client/utilities';
+
 // import { persistCache } from 'apollo3-cache-persist';
 
 const cache = new InMemoryCache();
@@ -27,20 +31,33 @@ const cache = new InMemoryCache();
 const httpLink = createHttpLink({
   uri: 'http://localhost:4000/graphql',
 });
+const wsLink = new WebSocketLink({
+  uri: 'ws://localhost:4000/graphql',
+  options: { reconnect: true },
+});
 
-const authLink = setContext((_, { headers }) => {
-  return {
+const authLink = new ApolloLink((operation, forward) => {
+  operation.setContext((context) => ({
     headers: {
-      ...headers,
+      ...context.headers,
       authorization: localStorage.getItem('token'),
     },
-  };
+  }));
+  return forward(operation);
 });
 
-export const client = new ApolloClient({
-  link: authLink.concat(httpLink),
-  cache,
-});
+const httpAuthLink = authLink.concat(httpLink);
+
+const link = split(
+  ({ query }) => {
+    const { kind, operation } = getMainDefinition(query);
+    return kind === 'OperationDefinition' && operation === 'subscription';
+  },
+  wsLink,
+  httpAuthLink
+);
+
+export const client = new ApolloClient({ cache, link });
 
 ReactDOM.render(
   <React.StrictMode>

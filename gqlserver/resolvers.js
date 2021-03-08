@@ -154,6 +154,7 @@ const resolvers = {
       subscribe: (parent, args, { pubsub }) =>
         pubsub.asyncIterator(['PHOTO_ADDED']),
     },
+
     newUser: {
       subscribe: (parent, args, { pubsub }) =>
         pubsub.asyncIterator(['NEW_USER']),
